@@ -18,7 +18,7 @@ anthropic==0.7.8
 # 웹 스크래핑
 # selenium==4.15.0  # 브라우저 드라이버 필요, Railway에서 복잡함
 beautifulsoup4==4.12.2
-lxml==4.9.3
+# lxml==4.9.3  # 시스템 라이브러리 필요, Railway에서 문제 발생 가능
 
 # 이미지 처리 (OCR)
 # pytesseract==0.3.10  # tesseract 바이너리 필요

@@ -1,5 +1,0 @@
-[phases.setup]
-nixPkgs = ["python3", "gcc", "libxml2", "libxslt"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt"]
