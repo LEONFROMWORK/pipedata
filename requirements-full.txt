@@ -12,6 +12,7 @@ backoff==2.2.1
 httpx==0.25.2
 aiohttp==3.9.1
 cloudscraper==1.2.71
+fake-useragent==1.4.0
 
 # 데이터베이스
 # sqlite3는 Python 표준 라이브러리에 포함
