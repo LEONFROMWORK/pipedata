@@ -8,11 +8,12 @@ Flask-CORS==4.0.0
 requests==2.31.0
 
 # 데이터베이스
-sqlite3
+# sqlite3는 Python 표준 라이브러리에 포함되어 있음
 
 # AI 및 임베딩
 openai==1.6.1
 anthropic==0.7.8
+sentence-transformers==2.2.2
 
 # 웹 스크래핑
 selenium==4.15.0
@@ -45,7 +46,7 @@ praw==7.7.1
 loguru==0.7.2
 
 # 병렬 처리
-concurrent.futures
+# concurrent.futures는 Python 표준 라이브러리에 포함되어 있음
 
 # JSON 처리
 jsonschema==4.19.2
