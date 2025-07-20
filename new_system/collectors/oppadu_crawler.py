@@ -7,6 +7,7 @@ import asyncio
 import logging
 import time
 import random
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
@@ -19,17 +20,23 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 
 # Selenium imports - optional for environments without Chrome
-try:
-    import undetected_chromedriver as uc
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.common.action_chains import ActionChains
-    from selenium.common.exceptions import TimeoutException, NoSuchElementException
-    SELENIUM_AVAILABLE = True
-except ImportError:
+SELENIUM_ENABLED = os.getenv('SELENIUM_ENABLED', 'false').lower() == 'true'
+
+if SELENIUM_ENABLED:
+    try:
+        import undetected_chromedriver as uc
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
+        from selenium.webdriver.support import expected_conditions as EC
+        from selenium.webdriver.common.action_chains import ActionChains
+        from selenium.common.exceptions import TimeoutException, NoSuchElementException
+        SELENIUM_AVAILABLE = True
+    except ImportError:
+        SELENIUM_AVAILABLE = False
+        logging.warning("Selenium/undetected_chromedriver not available. Some features will be limited.")
+else:
     SELENIUM_AVAILABLE = False
-    logging.warning("Selenium/undetected_chromedriver not available. Some features will be limited.")
+    logging.info("Selenium disabled by environment variable SELENIUM_ENABLED=false")
 
 from core.cache import APICache
 from core.dedup_tracker import get_global_tracker
