@@ -1,0 +1,1 @@
+# Excel Q&A Dataset Pipeline - TRD Compliant Implementation

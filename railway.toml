@@ -1,0 +1,29 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pip install -r requirements.txt"
+
+[deploy]
+startCommand = "cd new_system && python api_server.py"
+restartPolicyType = "always"
+restartPolicyMaxRetries = 10
+healthcheckPath = "/api/health"
+healthcheckTimeout = 30
+
+[environments.production]
+variables = { 
+  RAILWAY_ENVIRONMENT = "production",
+  LOG_LEVEL = "INFO",
+  SYNC_MODE = "continuous",
+  BATCH_SIZE = "50",
+  MAX_WORKERS = "4",
+  MEMORY_LIMIT_MB = "512"
+}
+
+[environments.development]
+variables = { 
+  RAILWAY_ENVIRONMENT = "development",
+  LOG_LEVEL = "DEBUG",
+  SYNC_MODE = "once",
+  BATCH_SIZE = "20",
+  MAX_WORKERS = "2"
+}

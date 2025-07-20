@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: datapipeline-dashboard
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BIGDATA_SYSTEM_PATH
+        value: /tmp/bigdata
+      - key: PORT
+        value: 10000
+    healthCheckPath: /api/collection/files
+    disk:
+      name: bigdata-storage
+      mountPath: /tmp/bigdata
+      sizeGB: 1
