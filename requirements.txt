@@ -13,15 +13,15 @@ requests==2.31.0
 # AI 및 임베딩
 openai==1.6.1
 anthropic==0.7.8
-sentence-transformers==2.2.2
+# sentence-transformers==2.2.2  # 메모리 집약적, 필요시 별도 설치
 
 # 웹 스크래핑
-selenium==4.15.0
+# selenium==4.15.0  # 브라우저 드라이버 필요, Railway에서 복잡함
 beautifulsoup4==4.12.2
 lxml==4.9.3
 
 # 이미지 처리 (OCR)
-pytesseract==0.3.10
+# pytesseract==0.3.10  # tesseract 바이너리 필요
 Pillow==10.0.1
 
 # 데이터 처리
