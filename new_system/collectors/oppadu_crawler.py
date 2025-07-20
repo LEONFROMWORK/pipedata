@@ -17,12 +17,19 @@ import aiohttp
 import cloudscraper
 from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-import undetected_chromedriver as uc
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+
+# Selenium imports - optional for environments without Chrome
+try:
+    import undetected_chromedriver as uc
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.common.action_chains import ActionChains
+    from selenium.common.exceptions import TimeoutException, NoSuchElementException
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
+    logging.warning("Selenium/undetected_chromedriver not available. Some features will be limited.")
 
 from core.cache import APICache
 from core.dedup_tracker import get_global_tracker
@@ -229,6 +236,10 @@ class OppaduCrawler:
     
     async def _fetch_with_selenium(self, url: str) -> List[str]:
         """Selenium을 사용한 JavaScript 렌더링 페이지 수집"""
+        if not SELENIUM_AVAILABLE:
+            self.logger.warning("Selenium not available, falling back to regular HTTP")
+            return []
+            
         try:
             if not self.driver:
                 # Undetected Chrome 설정

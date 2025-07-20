@@ -21,7 +21,15 @@ import json
 from core.cache import LocalCache, APICache
 from collectors.stackoverflow_collector import StackOverflowCollector
 from collectors.reddit_collector import RedditCollector
-from collectors.oppadu_crawler import OppaduCrawler
+
+# OppaduCrawler - optional (requires Selenium)
+try:
+    from collectors.oppadu_crawler import OppaduCrawler
+    OPPADU_AVAILABLE = True
+except ImportError:
+    OPPADU_AVAILABLE = False
+    logging.warning("OppaduCrawler not available (Selenium required)")
+    
 from processors.triage import ContentTriageSystem
 from processors.text_processor import TextProcessor
 from processors.image_processor import ImageProcessor
@@ -84,7 +92,7 @@ class ExcelQAPipeline:
         # Data collectors
         self.so_collector = StackOverflowCollector(self.api_cache)
         self.reddit_collector = RedditCollector(self.api_cache)
-        self.oppadu_crawler = OppaduCrawler(self.api_cache)
+        self.oppadu_crawler = OppaduCrawler(self.api_cache) if OPPADU_AVAILABLE else None
         
         # Processing components
         self.triage = ContentTriageSystem()
@@ -345,11 +353,12 @@ class ExcelQAPipeline:
         
         # Collect from Oppadu (한국 커뮤니티)
         if 'oppadu' in sources:
-            try:
-                logger.info("🇰🇷 Collecting from Oppadu (Korean community)...")
-                oppadu_results = await self.oppadu_crawler.collect_oppadu_questions(
-                    max_pages=max_pages
-                )
+            if self.oppadu_crawler:
+                try:
+                    logger.info("🇰🇷 Collecting from Oppadu (Korean community)...")
+                    oppadu_results = await self.oppadu_crawler.collect_oppadu_questions(
+                        max_pages=max_pages
+                    )
                 
                 # Convert Oppadu results to standard format
                 oppadu_pairs = []
@@ -405,9 +414,12 @@ class ExcelQAPipeline:
                 collection_results['oppadu'] = len(oppadu_pairs)
                 logger.info(f"🇰🇷 Oppadu collection complete: {len(oppadu_pairs)} Korean Q&A pairs")
                 
-            except Exception as e:
-                logger.error(f"Oppadu collection failed: {e}")
-                self._save_to_dead_letter('oppadu_collection_error', {'error': str(e)})
+                except Exception as e:
+                    logger.error(f"Oppadu collection failed: {e}")
+                    self._save_to_dead_letter('oppadu_collection_error', {'error': str(e)})
+                    collection_results['oppadu'] = 0
+            else:
+                logger.warning("Oppadu crawler not available (Selenium required)")
                 collection_results['oppadu'] = 0
         
         logger.info(f"Multi-source collection complete: {collection_results}")
