@@ -132,6 +132,11 @@ class RedditCollector:
         analyzed_pairs = []
         processed_count = 0
         
+        # 통계 수집을 위한 변수 추가
+        posts_explored = 0  # 탐색한 게시물 수
+        collection_start_time = time.time()  # 수집 시작 시간
+        quality_distribution = {"high": 0, "medium": 0, "low": 0}  # 품질 분포
+        
         try:
             # Get submissions from target subreddit
             subreddit = self.reddit.subreddit(self.config['subreddit'])
@@ -162,6 +167,7 @@ class RedditCollector:
                     
                     for submission in submissions_iter:
                         checked_count += 1
+                        posts_explored += 1  # 탐색한 게시물 수 증가
                         
                         # 디버깅: 첫 20개 포스트의 플레어 출력
                         if checked_count <= 20:
@@ -213,11 +219,20 @@ class RedditCollector:
                     if analysis_result:
                         analyzed_pairs.append(analysis_result)
                         
+                        # 품질 점수에 따른 분류
+                        quality_score = analysis_result.metadata.get('overall_score', 0.0)
+                        if quality_score >= 8.0:
+                            quality_distribution["high"] += 1
+                        elif quality_score >= 5.0:
+                            quality_distribution["medium"] += 1
+                        else:
+                            quality_distribution["low"] += 1
+                        
                         # 수집된 서브미션을 중복 추적기에 등록
                         self.dedup_tracker.mark_reddit_collected(
                             submission.id, 
                             submission.title,
-                            quality_score=analysis_result.metadata.get('overall_score', 0.0),
+                            quality_score=quality_score,
                             metadata={
                                 'flair': submission.link_flair_text,
                                 'collection_date': datetime.now().isoformat(),
@@ -226,7 +241,7 @@ class RedditCollector:
                             }
                         )
                         
-                        logger.info(f"Successfully analyzed thread: {submission.id}")
+                        logger.info(f"Successfully analyzed thread: {submission.id} (Quality: {quality_score:.1f})")
                     
                     processed_count += 1
                     
@@ -244,7 +259,45 @@ class RedditCollector:
             logger.error(f"Reddit API error: {e}")
             raise RedditAPIError(f"Reddit API failed: {e}")
         
-        logger.info(f"Reddit collection complete: {len(analyzed_pairs)} Q&A pairs from {processed_count} submissions")
+        # 수집 시간 계산
+        collection_time = time.time() - collection_start_time
+        
+        # 상세 통계 로깅
+        logger.info(f"Reddit collection complete:")
+        logger.info(f"  - 탐색한 게시물: {posts_explored}개")
+        logger.info(f"  - 처리한 게시물: {processed_count}개")
+        logger.info(f"  - 수집된 Q&A: {len(analyzed_pairs)}개")
+        logger.info(f"  - 품질 분포: 상={quality_distribution['high']}, 중={quality_distribution['medium']}, 하={quality_distribution['low']}")
+        logger.info(f"  - 수집 시간: {collection_time:.1f}초")
+        
+        # 데이터베이스에 수집 통계 저장
+        collection_metadata = {
+            'posts_explored': posts_explored,
+            'posts_processed': processed_count,
+            'quality_distribution': quality_distribution,
+            'collection_time_seconds': collection_time,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # 스킵된 항목 수 계산 (탐색했지만 처리하지 않은 게시물)
+        items_skipped = posts_explored - processed_count
+        
+        self.dedup_tracker.record_collection_stats(
+            source='reddit',
+            items_collected=len(analyzed_pairs),
+            items_skipped=items_skipped,
+            metadata=collection_metadata
+        )
+        
+        # 통계를 메타데이터로 추가 (각 결과에 전체 통계 포함)
+        for result in analyzed_pairs:
+            result.metadata['collection_stats'] = {
+                'posts_explored': posts_explored,
+                'items_collected': len(analyzed_pairs),
+                'quality_distribution': quality_distribution,
+                'collection_time_seconds': collection_time
+            }
+        
         return analyzed_pairs
     
     def _passes_submission_filter(self, submission) -> bool:

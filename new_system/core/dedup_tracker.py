@@ -252,6 +252,28 @@ class DuplicationTracker:
         logger.info(f"Filtered Oppadu posts: {len(new_posts)} new, {skipped_count} skipped")
         return new_posts
     
+    def record_collection_stats(self, source: str, items_collected: int, items_skipped: int, 
+                               metadata: Optional[Dict[str, Any]] = None) -> bool:
+        """수집 통계를 collection_stats 테이블에 기록"""
+        try:
+            metadata_json = json.dumps(metadata or {})
+            collection_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute('''
+                    INSERT INTO collection_stats 
+                    (source, collection_date, items_collected, items_skipped, collection_metadata)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (source, collection_date, items_collected, items_skipped, metadata_json))
+                
+                conn.commit()
+                logger.info(f"Recorded collection stats for {source}: {items_collected} collected, {items_skipped} skipped")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error recording collection stats: {e}")
+            return False
+    
     def get_collection_stats(self, days: int = 30) -> Dict[str, Any]:
         """최근 N일간 수집 통계 조회"""
         try:
